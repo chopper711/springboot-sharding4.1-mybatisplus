@@ -1,0 +1,104 @@
+spring:
+  shardingsphere:
+    datasource:
+      #  数据库名称，可自定义，可以为多个，以逗号隔开，每个在这里定义的库，都要在下面定义连接属性
+      names: data2020,data2019
+      #年份为2019年的库
+      data2019:
+        #  采用的数据库连接池，druid
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://127.0.0.1:3306/sharding2019?useUnicode=true&characterEncoding=utf-8&useSSL=false
+        username: root
+        password: 123456
+        maxActive: 20
+        initialSize: 5
+        maxWait: 60000
+        minIdle: 5
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        validationQuery: SELECT 1 FROM DUAL
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        #是否缓存preparedStatement，也就是PSCache。在mysql下建议关闭。 PSCache对支持游标的数据库性能提升巨大，比如说oracle。
+        poolPreparedStatements: false
+        #要启用PSCache，-1为关闭 必须配置大于0，当大于0时，poolPreparedStatements自动触发修改为true  可以把这个数值配置大一些，比如说100
+        maxOpenPreparedStatements: -1
+        #配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+        filters: stat,wall,log4j2
+        #通过connectProperties属性来打开mergeSql功能；慢SQL记录
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+        #合并多个DruidDataSource的监控数据
+        useGlobalDataSourceStat: true
+        loginUsername: druid
+        loginPassword: druid
+      #年份为2020年的库
+      data2020:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://127.0.0.1:3306/sharding2020?useUnicode=true&characterEncoding=utf-8&useSSL=false
+        username: root
+        password: 123456
+        maxActive: 20
+        initialSize: 5
+        maxWait: 60000
+        minIdle: 5
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        validationQuery: SELECT 1 FROM DUAL
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        #是否缓存preparedStatement，也就是PSCache。在mysql下建议关闭。 PSCache对支持游标的数据库性能提升巨大，比如说oracle。
+        poolPreparedStatements: false
+        #要启用PSCache，-1为关闭 必须配置大于0，当大于0时，poolPreparedStatements自动触发修改为true  可以把这个数值配置大一些，比如说100
+        maxOpenPreparedStatements: -1
+        #配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+        filters: stat,wall,log4j2
+        #通过connectProperties属性来打开mergeSql功能；慢SQL记录
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+        #合并多个DruidDataSource的监控数据
+        useGlobalDataSourceStat: true
+        loginUsername: druid
+        loginPassword: druid
+    sharding:
+      default-data-source-name: data2019
+      #需要拆分的表，可以设置多个
+      tables:
+        #需要进行分表的逻辑表名，用MyBatis或者MyBatis-Plus操作数据库时只需要操作逻辑表即可，xml文件也只需要配置逻辑表
+        li_order:
+          #实际的表结点,下面代表的是li_order_为开头的所有表，如果能确定表的范围例如按月份分表，这里的写法是data$->{2019..2020}.li_order_&->{01..12}表示12个月的表
+          actual-data-nodes: data$->{2019..2020}.li_order_$->{01..12}
+          #分库策略，按照创建时间的年份分库，如果不用分库的，直接注释掉分库相关的代码
+          database-strategy:
+            standard:
+              sharding-column: create_time
+              precise-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingDatabaseAlgorithm
+              range-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingDatabaseAlgorithm
+          table-strategy:
+            # 分表策略，根据自己的需要写的分表策略，这里我是根据car_park_id这个字段的值作为后缀，来确定放到哪张表
+            standard:
+              sharding-column: create_time
+              precise-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingTableAlgorithm
+              range-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingTableAlgorithm
+        li_trade:
+          #实际的表结点,下面代表的是li_order_为开头的所有表，如果能确定表的范围例如按月份分表，这里的写法是ds$->{2019..2020}.li_order_&->{01..12}表示12个月的表
+          actual-data-nodes: data$->{2019..2020}.li_order_$->{01..12}
+          #分库策略，按照创建时间的年份分库，如果不用分库的，直接注释掉分库相关的代码
+          database-strategy:
+            standard:
+              sharding-column: create_time
+              precise-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingDatabaseAlgorithm
+              range-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingDatabaseAlgorithm
+          table-strategy:
+            # 分表策略，根据自己的需要写的分表策略，这里我是根据car_park_id这个字段的值作为后缀，来确定放到哪张表
+            standard:
+              sharding-column: create_time
+              precise-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingTableAlgorithm
+              range-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingTableAlgorithm
+
+    props:
+      # 是否打印逻辑SQL语句和实际SQL语句，建议调试时打印，在生产环境关闭
+      sql:
+        show: true

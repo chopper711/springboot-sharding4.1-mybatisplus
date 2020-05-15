@@ -1,0 +1,72 @@
+spring:
+  shardingsphere:
+    datasource:
+      #  数据库名称，可自定义，可以为多个，以逗号隔开，每个在这里定义的库，都要在下面定义连接属性
+      names: data2020
+      data2020:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://39.107.31.6:3306/sharding2020?useUnicode=true&characterEncoding=utf-8&useSSL=false
+        username: root
+        password: 123456
+        maxActive: 20
+        initialSize: 5
+        maxWait: 60000
+        minIdle: 5
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        validationQuery: SELECT 1 FROM DUAL
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        #是否缓存preparedStatement，也就是PSCache。在mysql下建议关闭。 PSCache对支持游标的数据库性能提升巨大，比如说oracle。
+        poolPreparedStatements: false
+        #要启用PSCache，-1为关闭 必须配置大于0，当大于0时，poolPreparedStatements自动触发修改为true  可以把这个数值配置大一些，比如说100
+        maxOpenPreparedStatements: -1
+        #配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+        filters: stat,wall,log4j2
+        #通过connectProperties属性来打开mergeSql功能；慢SQL记录
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+        #合并多个DruidDataSource的监控数据
+        useGlobalDataSourceStat: true
+        loginUsername: druid
+        loginPassword: druid
+    sharding:
+      default-data-source-name: data2020
+      #需要拆分的表，可以设置多个
+      tables:
+        #需要进行分表的逻辑表名，用MyBatis或者MyBatis-Plus操作数据库时只需要操作逻辑表即可，xml文件也只需要配置逻辑表
+        li_order:
+          #实际的表结点,下面代表的是li_order_为开头的所有表，如果能确定表的范围例如按月份分表，这里的写法是data2020.li_order_$->{2020..2021}_$->{01..12}  表示例如 li_order_2020_01 li_order_2020_03 li_order_2021_01
+          actual-data-nodes: data2020.li_order_$->{2019..2021}_$->{01..12}
+          table-strategy:
+            # 分表策略，根据创建日期
+            standard:
+              sharding-column: create_time
+              precise-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingTableAlgorithm
+              range-algorithm-class-name: com.example.demo.config.sharding.CreateTimeShardingTableAlgorithm
+    props:
+      # 是否打印逻辑SQL语句和实际SQL语句，建议调试时打印，在生产环境关闭
+      sql:
+        show: true
+#是否输出Mybatis-Plus代执行的SQL语句
+logging:
+  level:
+    com.example.demo.module.dao: trace
+
+server:
+  port: 8888
+
+
+# Swagger界面内容配置
+swagger:
+  title: Demo接口
+  description: 接口文档
+  version: 1.0.0
+  termsOfServiceUrl: google.com
+  contact:
+    name: Chopper
+    url: google.com
+    email: liushuai711@gmail.com
+
+
